@@ -103,7 +103,6 @@ function ChartBuilder(settings) {
 	function prepareData() {
 		let data = chart_data[0],
 				dates_col_name = data.types.x;
-
 		// Prepare data for charts
 		for( let prop in data.names ) {
 			let chart = {};
