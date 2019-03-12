@@ -1,0 +1,40 @@
+html,body {
+	font-family: Calibri, Tahoma, sans-serif;
+}
+
+.container {
+	padding: 0 15px;
+}
+
+#app {
+	width: 800px;
+	height: 600px;
+	margin: 25px auto;
+}
+
+.app__main-title {
+	height: 10%;
+	font-size: 24px;
+	font-weight: bold;
+}
+
+#app__main {
+	height: 70%;
+	overflow: hidden;
+	/*background-color: red;*/
+}
+
+#app__main-holder {
+	height: 90%;
+	overflow: auto hidden;	
+}
+
+#app__scroll {
+	height: 15%;
+	background-color: green;
+}
+
+#app__switchers {
+	height: 15%;
+	background-color: blue;
+}
