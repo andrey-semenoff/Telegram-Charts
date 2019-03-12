@@ -25,6 +25,7 @@ html,body {
 }
 
 #app__main-holder {
+	position: relative;
 	height: 90%;
 	overflow: auto hidden;	
 }

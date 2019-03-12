@@ -52,6 +52,8 @@ function ChartBuilder(settings) {
 		calcVariables();
 		drawValuesLines();
 		drawBreakpoints();
+		drawDates();
+		drawCharts();
 
 		// console.log(charts);
 		// console.log(timestamps);
@@ -153,12 +155,12 @@ function ChartBuilder(settings) {
 
 	function drawValuesLines() {
 		let $group_lines = self.createElementNS(xmlns, 'g', {
-									width: '100%',
-									height: '100%'
-								},
-								{
-									background: '#fff'
-								}),
+												width: '100%',
+												height: '100%'
+											},
+											{
+												background: '#fff'
+											}),
 				margin_bottom = 50,
 				start_height = parseInt(svg_main__computed.height) - margin_bottom;
 
@@ -179,10 +181,20 @@ function ChartBuilder(settings) {
 	}
 
 	function drawBreakpoints() {
-		let $group_breakpoints = self.createElementNS(xmlns, 'g', {
-									width: '10%',
-									height: '100%'
-								}),
+		let main_holder_params = $main_holder.getBoundingClientRect(),
+				$svg_breakpoints = self.createElementNS(xmlns, 'svg', {
+														width: '40px',
+														height: main_holder_params.height + 'px'
+													},
+													{
+														position: 'fixed',
+														top: main_holder_params.top + 'px',
+														left: main_holder_params.left + 'px'
+													}),
+				$group_breakpoints = self.createElementNS(xmlns, 'g', {
+															width: '10%',
+															height: '100%'
+														}),
 				margin_bottom = 50,
 				line_height = 5,
 				start_height = parseInt(svg_main__computed.height) - margin_bottom;
@@ -190,18 +202,97 @@ function ChartBuilder(settings) {
 		for ( let b = 0; b <= breakpoints; b++ ) {
 			let y = start_height - line_height - (b * step_value),
 					$text = self.createElementNS(xmlns, 'text', {
-									x: 0,
+										x: 0,
+										y: y,
+										fill: '#aaa'
+									},
+									{
+										'font-size': '14px'
+									});
+			$text.append(b * step_value);
+			$group_breakpoints.appendChild($text);
+			$svg_breakpoints.appendChild($group_breakpoints);
+		}
+
+		$main_holder.appendChild($svg_breakpoints);
+	}
+
+	function drawDates() {
+		let date_diff = timestamps[timestamps.length - 1] - timestamps[0],
+				date_diff_in_days = date_diff/(1000*60*60*24),
+				draw_period = 7,
+				periods = Math.ceil(date_diff_in_days / draw_period),
+				$group_values = self.createElementNS(xmlns, 'g', {
+													width: '100%',
+													height: '100%'
+												}),
+				margin_bottom = 20,
+				margin_right = 40,
+				min_width = 40,
+				y = parseInt(svg_main__computed.height) - margin_bottom,
+				monthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
+
+		periods = Math.floor((parseInt(svg_main__computed.width) - margin_right) / (min_width + margin_right));
+		draw_period = date_diff_in_days / periods;
+
+		let index = 0;
+		for ( let t = timestamps[0]; t <= timestamps[timestamps.length - 1]; t += draw_period*1000*60*60*24) {
+			let $text = self.createElementNS(xmlns, 'text', {
+									x: index * (min_width + margin_right),
 									y: y,
 									fill: '#aaa'
 								},
 								{
 									'font-size': '14px'
-								});
-			$text.append(b * step_value);
-			$group_breakpoints.appendChild($text);
+								}),
+					date = new Date(t),
+					month = date.getMonth(),
+					day = date.getDate();
+
+			$text.append(monthNames[month] + ' ' + day);
+			$group_values.appendChild($text);
+			index++;
 		}
 
-		$svg_main.appendChild($group_breakpoints);
+		$svg_main.appendChild($group_values);
+	}
+
+	function drawCharts() {
+		// console.log(charts);
+		let $group_charts = self.createElementNS(xmlns, 'g', {
+															width: '100%',
+															height: '100%'
+														}),
+				margin_bottom = 50,
+				start_height = parseInt(svg_main__computed.height) - margin_bottom;
+
+		charts.forEach(function(chart) {
+			let points_string = '',
+					start_ts = timestamps[0];
+			chart.column.forEach(function(y, i) {
+				let date_diff = timestamps[i] - start_ts,
+						days_diff = 0;
+				if ( date_diff > 0 ) {
+					days_diff = date_diff/(1000*60*60*24);
+				}
+				points_string += (days_diff * px_per_day) + ',' + (start_height - y) + ' ';
+			});
+
+			points_string.trim();
+
+			let $chart_line = self.createElementNS(xmlns, 'polyline', {
+													points: points_string
+												},
+												{
+													fill: 'transparent', 
+													stroke: chart.color,
+													'stroke-width': 2
+												});
+
+			$group_charts.appendChild($chart_line);
+		});
+
+		$svg_main.appendChild($group_charts);	
 	}
 
 	constructor(settings);
