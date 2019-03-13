@@ -5,6 +5,7 @@
 	*/
 function ChartBuilder(settings) {
 	let self = this,
+			active_set = 2,
 			chart_data = null,
 			$container = null,
 			$main = null,
@@ -25,7 +26,8 @@ function ChartBuilder(settings) {
 			breakpoints = 5,
 			px_per_day = null,
 			px_per_val = null,
-			step_value = null;
+			step_value = null,
+			koef = 1;
 
 	/**
 		* Constructor of Chart
@@ -101,7 +103,7 @@ function ChartBuilder(settings) {
 	}
 
 	function prepareData() {
-		let data = chart_data[0],
+		let data = chart_data[active_set],
 				dates_col_name = data.types.x;
 		// Prepare data for charts
 		for( let prop in data.names ) {
@@ -139,6 +141,8 @@ function ChartBuilder(settings) {
 	}
 
 	function calcVariables() {
+		let main_holder_params = $main_holder.getBoundingClientRect();
+
 		svg_main__computed = getComputedStyle($svg_main);
 		px_per_day = parseInt(svg_main__computed.width) / timestamps.length;
 
@@ -147,9 +151,13 @@ function ChartBuilder(settings) {
 			all_values = all_values.concat(chart.column);
 		});
 
-		let max_value = Math.max.apply(null, all_values);
-		px_per_val = parseInt(svg_main__computed.height) / max_value;
-		step_value = Math.floor(max_value / breakpoints);
+		let max_value = Math.max.apply(null, all_values),
+				svg_main_height = parseInt(svg_main__computed.height);
+
+		koef = (svg_main_height - 70)/max_value;
+
+		px_per_val = svg_main_height / (max_value * koef);
+		step_value = Math.ceil(max_value / breakpoints);		
 	}
 
 	function drawValuesLines() {
@@ -164,7 +172,7 @@ function ChartBuilder(settings) {
 				start_height = parseInt(svg_main__computed.height) - margin_bottom;
 
 		for ( let b = 0; b <= breakpoints; b++ ) {
-			let y = start_height - (b * step_value),
+			let y = start_height - (b * step_value * koef),
 					$line = self.createElementNS(xmlns, 'line', {
 									x1: 0,
 									y1: y,
@@ -182,7 +190,7 @@ function ChartBuilder(settings) {
 	function drawBreakpoints() {
 		let main_holder_params = $main_holder.getBoundingClientRect(),
 				$svg_breakpoints = self.createElementNS(xmlns, 'svg', {
-														width: '40px',
+														width: '60px',
 														height: main_holder_params.height + 'px'
 													},
 													{
@@ -190,16 +198,13 @@ function ChartBuilder(settings) {
 														top: main_holder_params.top + 'px',
 														left: main_holder_params.left + 'px'
 													}),
-				$group_breakpoints = self.createElementNS(xmlns, 'g', {
-															width: '10%',
-															height: '100%'
-														}),
+				$group_breakpoints = self.createElementNS(xmlns, 'g'),
 				margin_bottom = 50,
 				line_height = 5,
 				start_height = parseInt(svg_main__computed.height) - margin_bottom;
 
 		for ( let b = 0; b <= breakpoints; b++ ) {
-			let y = start_height - line_height - (b * step_value),
+			let y = start_height - line_height - (b * step_value * koef),
 					$text = self.createElementNS(xmlns, 'text', {
 										x: 0,
 										y: y,
@@ -274,7 +279,7 @@ function ChartBuilder(settings) {
 				if ( date_diff > 0 ) {
 					days_diff = date_diff/(1000*60*60*24);
 				}
-				points_string += (days_diff * px_per_day) + ',' + (start_height - y) + ' ';
+				points_string += (days_diff * px_per_day) + ',' + (start_height - y * koef) + ' ';
 			});
 
 			points_string.trim();
