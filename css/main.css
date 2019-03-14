@@ -37,5 +37,5 @@ html,body {
 
 #app__switchers {
 	height: 15%;
-	background-color: blue;
+	background-color: rgba(0,0,255,.3);
 }

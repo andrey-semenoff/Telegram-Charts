@@ -5,7 +5,7 @@
 	*/
 function ChartBuilder(settings) {
 	let self = this,
-			active_set = 2,
+			active_set = 4,
 			chart_data = null,
 			$container = null,
 			$main = null,
@@ -27,13 +27,13 @@ function ChartBuilder(settings) {
 			px_per_day = null,
 			px_per_val = null,
 			step_value = null,
+			min_breakpoint_value = 0,
 			koef = 1;
 
 	/**
 		* Constructor of Chart
 		*/
 	function constructor(settings) {
-		console.log('Creating Chart...');
 		$container = settings.container;
 		chart_data = settings.chart_data;
 		if( !$container || !chart_data ) {
@@ -96,7 +96,7 @@ function ChartBuilder(settings) {
 									height: '100%'
 								},
 								{
-									background: 'linear-gradient(to right, yellow, black)'
+									background: 'linear-gradient(to right, rgba(0,255,0, .5), rgba(0,0,0, .5))'
 								});
 		$main_holder.appendChild($svg_main);
 		$scroll.appendChild($svg_scroll);
@@ -152,12 +152,27 @@ function ChartBuilder(settings) {
 		});
 
 		let max_value = Math.max.apply(null, all_values),
+				min_value = Math.min.apply(null, all_values),
 				svg_main_height = parseInt(svg_main__computed.height);
+		step_value = Math.ceil(max_value / breakpoints);
 
-		koef = (svg_main_height - 70)/max_value;
+		let section = null,
+				i = 0;
 
-		px_per_val = svg_main_height / (max_value * koef);
-		step_value = Math.ceil(max_value / breakpoints);		
+		while ( section !== 0 && i < 5 ) {
+			for ( let b = 0; b <= breakpoints; b++ ) {
+				if ( min_value < step_value * b + min_breakpoint_value ) {
+					min_breakpoint_value = (b - 1) * step_value + min_breakpoint_value;
+					section = b - 1;
+					break;
+				}
+			}
+			i++;
+			step_value = Math.ceil((max_value - min_breakpoint_value) / breakpoints);
+		} 
+
+		koef = (svg_main_height - 70)/(max_value - min_breakpoint_value);
+		px_per_val = svg_main_height / ((max_value - min_breakpoint_value) * koef);
 	}
 
 	function drawValuesLines() {
@@ -213,7 +228,7 @@ function ChartBuilder(settings) {
 									{
 										'font-size': '14px'
 									});
-			$text.append(b * step_value);
+			$text.append(b * step_value + min_breakpoint_value);
 			$group_breakpoints.appendChild($text);
 			$svg_breakpoints.appendChild($group_breakpoints);
 		}
@@ -269,7 +284,7 @@ function ChartBuilder(settings) {
 														}),
 				margin_bottom = 50,
 				start_height = parseInt(svg_main__computed.height) - margin_bottom;
-
+console.log(min_breakpoint_value);
 		charts.forEach(function(chart) {
 			let points_string = '',
 					start_ts = timestamps[0];
@@ -279,7 +294,7 @@ function ChartBuilder(settings) {
 				if ( date_diff > 0 ) {
 					days_diff = date_diff/(1000*60*60*24);
 				}
-				points_string += (days_diff * px_per_day) + ',' + (start_height - y * koef) + ' ';
+				points_string += (days_diff * px_per_day) + ',' + (start_height - (y - min_breakpoint_value) * koef) + ' ';
 			});
 
 			points_string.trim();
