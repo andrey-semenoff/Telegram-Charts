@@ -10,6 +10,7 @@ function ChartBuilder(settings) {
 			$container = null,
 			$main = null,
 			$main_holder = null,
+			$main_wrapper = null,
 			$svg_main = null,
 			svg_main__computed = {},
 			$scroll = null,
@@ -46,6 +47,7 @@ function ChartBuilder(settings) {
 		$switchers = $container.children[2];
 
 		$main_holder = $main.children[1];
+		$main_wrapper = $main_holder.children[0];
 
 		// console.log(chart_data);
 
@@ -98,7 +100,7 @@ function ChartBuilder(settings) {
 								{
 									background: 'linear-gradient(to right, rgba(0,255,0, .5), rgba(0,0,0, .5))'
 								});
-		$main_holder.appendChild($svg_main);
+		$main_wrapper.appendChild($svg_main);
 		$scroll.appendChild($svg_scroll);
 	}
 
@@ -154,6 +156,7 @@ function ChartBuilder(settings) {
 		let max_value = Math.max.apply(null, all_values),
 				min_value = Math.min.apply(null, all_values),
 				svg_main_height = parseInt(svg_main__computed.height);
+				
 		step_value = Math.ceil(max_value / breakpoints);
 
 		let section = null,
@@ -205,13 +208,9 @@ function ChartBuilder(settings) {
 	function drawBreakpoints() {
 		let main_holder_params = $main_holder.getBoundingClientRect(),
 				$svg_breakpoints = self.createElementNS(xmlns, 'svg', {
+														id: 'app__breakpoints',
 														width: '60px',
 														height: main_holder_params.height + 'px'
-													},
-													{
-														position: 'fixed',
-														top: main_holder_params.top + 'px',
-														left: main_holder_params.left + 'px'
 													}),
 				$group_breakpoints = self.createElementNS(xmlns, 'g'),
 				margin_bottom = 50,
@@ -284,7 +283,7 @@ function ChartBuilder(settings) {
 														}),
 				margin_bottom = 50,
 				start_height = parseInt(svg_main__computed.height) - margin_bottom;
-console.log(min_breakpoint_value);
+
 		charts.forEach(function(chart) {
 			let points_string = '',
 					start_ts = timestamps[0];

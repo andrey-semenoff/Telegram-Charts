@@ -7,7 +7,7 @@ html,body {
 }
 
 #app {
-	width: 800px;
+	max-width: 800px;
 	height: 600px;
 	margin: 25px auto;
 }
@@ -27,7 +27,18 @@ html,body {
 #app__main-holder {
 	position: relative;
 	height: 90%;
+}
+
+#app__main-wrapper {
+	width: 100%;
+	height: 100%;
 	overflow: auto hidden;	
+}
+
+#app__breakpoints {
+	position: absolute;
+	top: 0;
+	left: 0;
 }
 
 #app__scroll {
