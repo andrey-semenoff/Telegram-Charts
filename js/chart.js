@@ -88,14 +88,13 @@ function ChartBuilder(settings) {
 	function createLayouts() {
 		$svg_main = self.createElementNS(xmlns, 'svg', {
 								width: (1 / (visible.to - visible.from)) * 100 +'%',
-								height: '100%'
-							},
-							{
-								background: '#fff'
+								height: '100%',
+								id: 'app__main-svg'
 							});
 		$svg_scroll = self.createElementNS(xmlns, 'svg', {
 									width: '100%',
-									height: '100%'
+									height: '100%',
+								id: 'app__scroll-svg'
 								},
 								{
 									background: 'linear-gradient(to right, rgba(0,255,0, .5), rgba(0,0,0, .5))'
@@ -179,13 +178,7 @@ function ChartBuilder(settings) {
 	}
 
 	function drawValuesLines() {
-		let $group_lines = self.createElementNS(xmlns, 'g', {
-												width: '100%',
-												height: '100%'
-											},
-											{
-												background: '#fff'
-											}),
+		let $group_lines = self.createElementNS(xmlns, 'g'),
 				margin_bottom = 50,
 				start_height = parseInt(svg_main__computed.height) - margin_bottom;
 
@@ -236,17 +229,15 @@ function ChartBuilder(settings) {
 	}
 
 	function drawDates() {
-		let date_diff = timestamps[timestamps.length - 1] - timestamps[0],
+		let $app__main_svg = document.getElementById('app__main-svg'),
+				date_diff = timestamps[timestamps.length - 1] - timestamps[0],
 				date_diff_in_days = date_diff/(1000*60*60*24),
 				draw_period = 7,
 				periods = Math.ceil(date_diff_in_days / draw_period),
-				$group_values = self.createElementNS(xmlns, 'g', {
-													width: '100%',
-													height: '100%'
-												}),
+				$group_values = self.createElementNS(xmlns, 'g'),
 				margin_bottom = 20,
 				margin_right = 40,
-				min_width = 40,
+				min_width = 55,
 				y = parseInt(svg_main__computed.height) - margin_bottom,
 				monthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
 
@@ -272,15 +263,17 @@ function ChartBuilder(settings) {
 			index++;
 		}
 
+
+		if( $app__main_svg.getBoundingClientRect().width < ((index + 1) * min_width) ) {
+			$app__main_svg.setAttribute('width', timestamps.length * min_width + 'px');
+		}
+
 		$svg_main.appendChild($group_values);
 	}
 
 	function drawCharts() {
 		// console.log(charts);
-		let $group_charts = self.createElementNS(xmlns, 'g', {
-															width: '100%',
-															height: '100%'
-														}),
+		let $group_charts = self.createElementNS(xmlns, 'g'),
 				margin_bottom = 50,
 				start_height = parseInt(svg_main__computed.height) - margin_bottom;
 
