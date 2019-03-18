@@ -5,7 +5,7 @@
 	*/
 function ChartBuilder(settings) {
 	let self = this,
-			active_set = 4,
+			active_set = 3,
 			chart_data = null,
 			$container = null,
 			$main = null,
@@ -19,6 +19,9 @@ function ChartBuilder(settings) {
 			xmlns = "http://www.w3.org/2000/svg",
 			$svg = null,
 			charts = [],
+			all_values = [],
+			max_value_abs = null,
+			min_value_abs = null,	
 			timestamps = [],
 			visible = {
 				from: 0.75, 
@@ -58,13 +61,22 @@ function ChartBuilder(settings) {
 		drawBreakpoints();
 		drawDates();
 		drawCharts();
+		drawScrollCharts();
+		drawChartsSwitchers();
+		createEvents();
 
 		// console.log(charts);
 		// console.log(timestamps);
 	}
 
 	this.createElementNS = function(ns, name, attributes, styles) {
-		let $el = document.createElementNS(xmlns, name);
+		let $el = null;
+
+		if( ns !== null ) {
+			$el = document.createElementNS(ns, name);			
+		} else {
+			$el = document.createElement(name);			
+		}
 
 		for( let prop in attributes ) {
 			$el.setAttribute(prop, attributes[prop]);
@@ -94,10 +106,10 @@ function ChartBuilder(settings) {
 		$svg_scroll = self.createElementNS(xmlns, 'svg', {
 									width: '100%',
 									height: '100%',
-								id: 'app__scroll-svg'
+									id: 'app__scroll-svg'
 								},
 								{
-									background: 'linear-gradient(to right, rgba(0,255,0, .5), rgba(0,0,0, .5))'
+									background: '#fff'
 								});
 		$main_wrapper.appendChild($svg_main);
 		$scroll.appendChild($svg_scroll);
@@ -147,34 +159,34 @@ function ChartBuilder(settings) {
 		svg_main__computed = getComputedStyle($svg_main);
 		px_per_day = parseInt(svg_main__computed.width) / timestamps.length;
 
-		let all_values = [];
 		charts.forEach(function(chart) {
 			all_values = all_values.concat(chart.column);
 		});
 
-		let max_value = Math.max.apply(null, all_values),
-				min_value = Math.min.apply(null, all_values),
-				svg_main_height = parseInt(svg_main__computed.height);
+		let svg_main_height = parseInt(svg_main__computed.height);
+		
+		max_value_abs = Math.max.apply(null, all_values);
+		min_value_abs = Math.min.apply(null, all_values);	
 				
-		step_value = Math.ceil(max_value / breakpoints);
+		step_value = Math.ceil(max_value_abs / breakpoints);
 
 		let section = null,
 				i = 0;
 
 		while ( section !== 0 && i < 5 ) {
 			for ( let b = 0; b <= breakpoints; b++ ) {
-				if ( min_value < step_value * b + min_breakpoint_value ) {
+				if ( min_value_abs < step_value * b + min_breakpoint_value ) {
 					min_breakpoint_value = (b - 1) * step_value + min_breakpoint_value;
 					section = b - 1;
 					break;
 				}
 			}
 			i++;
-			step_value = Math.ceil((max_value - min_breakpoint_value) / breakpoints);
+			step_value = Math.ceil((max_value_abs - min_breakpoint_value) / breakpoints);
 		} 
 
-		koef = (svg_main_height - 70)/(max_value - min_breakpoint_value);
-		px_per_val = svg_main_height / ((max_value - min_breakpoint_value) * koef);
+		koef = (svg_main_height - 70)/(max_value_abs - min_breakpoint_value);
+		px_per_val = svg_main_height / ((max_value_abs - min_breakpoint_value) * koef);
 	}
 
 	function drawValuesLines() {
@@ -304,6 +316,120 @@ function ChartBuilder(settings) {
 		});
 
 		$svg_main.appendChild($group_charts);	
+	}
+
+	function drawScrollCharts() {
+		// console.log(charts);
+		let $app__scroll_svg = document.getElementById('app__scroll-svg'),
+				$group_charts = self.createElementNS(xmlns, 'g'),
+				app__scroll_svg_params = $app__scroll_svg.getBoundingClientRect(),
+				start_height = app__scroll_svg_params.height,
+				px_scroll_per_day = app__scroll_svg_params.width / timestamps.length,
+				koef_scroll = start_height/max_value_abs;
+
+		charts.forEach(function(chart) {
+			let points_string = '',
+					start_ts = timestamps[0];
+			chart.column.forEach(function(y, i) {
+				let date_diff = timestamps[i] - start_ts,
+						days_diff = 0;
+				if ( date_diff > 0 ) {
+					days_diff = date_diff/(1000*60*60*24);
+				}
+				points_string += (days_diff * px_scroll_per_day) + ',' + (start_height - (y * koef_scroll)) + ' ';
+			});
+
+			points_string.trim();
+
+			let $chart_line = self.createElementNS(xmlns, 'polyline', {
+													points: points_string
+												},
+												{
+													fill: 'transparent', 
+													stroke: chart.color,
+													'stroke-width': 1
+												});
+
+			$group_charts.appendChild($chart_line);
+		});
+
+		$app__scroll_svg.appendChild($group_charts);	
+	}
+
+	function drawChartsSwitchers() {
+		let $app__switchers = document.getElementById('app__switchers');
+
+		charts.forEach(function(chart) {
+			console.log(chart);
+			let $chart_switcher = self.createElementNS(null, 'div', {
+													class: 'app-switcher checked'
+												}),
+					$chart_switcher__chbox = self.createElementNS(null, 'span', {
+													class: 'app-switcher__chbox'
+												},
+												{
+													'background-color': chart.color,
+													'border': '2px solid ' + chart.color,
+												}),
+					$checkmark = self.createElementNS(xmlns, 'svg', {
+													class: 'checkmark'
+												}),
+					$checkmark_line = self.createElementNS(xmlns, 'polyline', {
+															points: '4,8 7,11 12,5'
+														},
+														{
+															fill: 'transparent',
+															stroke: 'white',
+															'stroke-width': 1.5,
+															'stroke-linecap': 'square'
+														}),
+					$chart_switcher__name = self.createElementNS(null, 'span', {
+													class: 'app-switcher__name'
+												});
+
+			$chart_switcher__name.innerHTML = chart.name;
+
+			$checkmark.appendChild($checkmark_line);
+			$chart_switcher__chbox.appendChild($checkmark);
+			$chart_switcher.appendChild($chart_switcher__chbox);
+			$chart_switcher.appendChild($chart_switcher__name);
+			$app__switchers.appendChild($chart_switcher);
+		});
+	}
+
+	function createEvents() {
+		let $chart_switchers = document.querySelectorAll('.app-switcher');
+
+		$chart_switchers.forEach(function($switcher) {
+			$switcher.addEventListener('click', function(e) {
+				let $checked = document.querySelectorAll('.app-switcher.checked');
+				
+				if( $switcher.classList.contains('checked') ) {
+					if( $checked.length > 1 ) {
+						$switcher.classList.remove('checked');
+						onChartSelectChange(document.querySelectorAll('.app-switcher.checked'));
+					}
+				} else {
+					$switcher.classList.add('checked');
+					onChartSelectChange(document.querySelectorAll('.app-switcher.checked'));
+				}
+
+				$checked = document.querySelectorAll('.app-switcher.checked');
+				if( $checked.length === 1 ) {
+					$checked[0].classList.add('disabled');
+				} else {
+					$checked.forEach(function($switcher) {
+						$switcher.classList.remove('disabled');
+					});
+				}
+			});
+		});	
+
+
+	}
+
+	function onChartSelectChange($checked) {	
+		console.log($checked);
 	}
 
 	constructor(settings);
