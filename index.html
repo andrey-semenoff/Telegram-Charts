@@ -4,9 +4,18 @@
 	<meta charset="UTF-8">
 	<title>Charts</title>
 	<link rel="stylesheet" href="css/main.css">
+	<link rel="rel" href="favicon.ico">
 </head>
 <body>
 	<div class="container">
+		<form id="form_main" style="width: 800px; margin: 0 auto; text-align: center;">
+			<label for="selelct_chart" style="display: block; margin: 15px 0;">Make your choice, please</label>
+			<select name="chart_id" id="select_chart" style="min-width: 50px; padding: 5px; border-radius: 50px; outline: none;">
+				<option value="">Select charts set</option>
+				<option value="0">0</option>
+				<option value="1">1</option>
+			</select>
+		</form>
 		<div id="app"></div>
 	</div>
 	<script src="js/chart.js"></script>

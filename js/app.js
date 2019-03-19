@@ -1,28 +1,58 @@
 "use strict"
 
-var	$app = document.getElementById('app'),
-		xhr = new XMLHttpRequest();
 
-xhr.open('GET', './chart_data.json', true);
-xhr.send();
+document.addEventListener('DOMContentLoaded', function() {
+	let Chart = null,
+			chart_data = '',
+			$app = document.getElementById('app'),
+			$select = document.getElementById('select_chart'),
+			xhr = new XMLHttpRequest();
 
-xhr.onreadystatechange = function() {
-	if (xhr.readyState != 4) return;
+	xhr.open('GET', './chart_data.json', true);
+	xhr.send();
 
-	if( xhr.status === 200 ) {
-		let chart_data = JSON.parse(xhr.responseText);
-		// console.log(chart_data);
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState != 4) return;
 
-		var Chart = new ChartBuilder({
+		if( xhr.status === 200 ) {
+			chart_data = xhr.responseText;
+			// console.log(JSON.parse(chart_data));
+
+			createSelectOptions(JSON.parse(chart_data));
+
+			if( $select.value !== '' ) {
+				Chart = new ChartBuilder({
+					container: $app,
+					id_prefix: 'app',
+					chart_data: JSON.parse(chart_data)[$select.value],
+					externalCss: false,
+					title: 'Followers'
+				});
+			}
+		} else {
+			console.error(xhr.status + ' ' + xhr.statusText);
+		}	
+	}
+
+	$select.addEventListener('change', function(e) {
+		// console.log(e.target.value);
+		Chart = new ChartBuilder({
 			container: $app,
 			id_prefix: 'app',
-			chart_data: chart_data,
+			chart_data: JSON.parse(chart_data)[e.target.value],
 			externalCss: false,
 			title: 'Followers'
 		});
+	}, false);
 
 
-	} else {
-		console.error(xhr.status + ' ' + xhr.statusText);
-	}	
-}
+
+	function createSelectOptions(chart_data) {
+		let select_html = '';
+		chart_data.forEach(function(chart, i) {
+			select_html += '<option value="'+ i +'"">Chart '+ i +'</option>';
+		});
+		$select.innerHTML = select_html;
+	}
+}, false);
+

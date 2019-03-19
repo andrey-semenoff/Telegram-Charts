@@ -18,7 +18,6 @@ function ChartBuilder(settings) {
 			externalCss = false,
 			title = null,
 
-			active_set = 3,
 			$app__main = null,
 			$app__main_title = null,
 			$app__main_holder = null,
@@ -62,19 +61,19 @@ function ChartBuilder(settings) {
 		}
 
 		if ( !externalCss ) {
-		// var css = 'h1 { background: red; }',
-  //   head = document.head || document.getElementsByTagName('head')[0],
-  //   style = document.createElement('style');
+			let css = 'h1 { background: red; }',
+			    head = document.head || document.getElementsByTagName('head')[0],
+			    style = document.createElement('style');
 
-		// head.appendChild(style);
+			head.appendChild(style);
 
-		// style.type = 'text/css';
-		// if (style.styleSheet){
-		//   // This is required for IE8 and below.
-		//   style.styleSheet.cssText = css;
-		// } else {
-		//   style.appendChild(document.createTextNode(css));
-		// }			
+			style.type = 'text/css';
+
+			if (style.styleSheet){
+			  style.styleSheet.cssText = css;
+			} else {
+			  style.appendChild(document.createTextNode(css));
+			}			
 		}
 
 		// console.log(chart_data);
@@ -154,6 +153,7 @@ function ChartBuilder(settings) {
 									height: '100%',
 									id: id_prefix + '__scroll-svg'
 								});
+		$container.innerHTML = "";
 		$container.appendChild($app__main);
 		$container.appendChild($app__scroll);
 		$container.appendChild($app__switchers);
@@ -170,7 +170,7 @@ function ChartBuilder(settings) {
 	}
 
 	function prepareData() {
-		let data = chart_data[active_set],
+		let data = chart_data,
 				dates_col_name = data.types.x;
 		// Prepare data for charts
 		for( let prop in data.names ) {
