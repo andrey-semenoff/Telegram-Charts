@@ -2,20 +2,32 @@
 
 /**
 	* Chart builder
+	* 
+	* Settings:
+	* container   (string)  - (mandatory) ID of DOM element where to build charts
+	* chart_data  (array)   - (mandatory) JSON object with data about charts
+	* id_prefix   (string)  - (mandatory) namespace prefix for IDs of generated DOM elements
+	* externalCss (boolean) - (optional, false by default) use external css file for styling elements, or generate styles via JS
+	* title 			(string) -  (optional) showing title of charts
 	*/
 function ChartBuilder(settings) {
 	let self = this,
-			active_set = 3,
-			chart_data = null,
 			$container = null,
-			$main = null,
-			$main_holder = null,
-			$main_wrapper = null,
+			chart_data = null,
+			id_prefix = 'app',
+			externalCss = false,
+			title = null,
+
+			active_set = 3,
+			$app__main = null,
+			$app__main_title = null,
+			$app__main_holder = null,
+			$app__main_wrapper = null,
 			$svg_main = null,
 			svg_main__computed = {},
-			$scroll = null,
+			$app__scroll = null,
 			$svg_scroll = null,
-			$switchers = null,
+			$app__switchers = null,
 			xmlns = "http://www.w3.org/2000/svg",
 			$svg = null,
 			charts = [],
@@ -38,19 +50,32 @@ function ChartBuilder(settings) {
 		* Constructor of Chart
 		*/
 	function constructor(settings) {
-		$container = settings.container;
-		chart_data = settings.chart_data;
+		$container	= settings.container;
+		chart_data	= settings.chart_data;
+		id_prefix		= settings.id_prefix;
+		externalCss	= settings.externalCss;
+		title 			= settings.title;
+
 		if( !$container || !chart_data ) {
-			console.error('Chart builder constructor error! Settings not valid!');
+			console.error('Chart builder constructor error! Mandatory settings wasn\'t set!', settings);
 			return false;
 		}
 
-		$main = $container.children[0];
-		$scroll = $container.children[1];
-		$switchers = $container.children[2];
+		if ( !externalCss ) {
+		// var css = 'h1 { background: red; }',
+  //   head = document.head || document.getElementsByTagName('head')[0],
+  //   style = document.createElement('style');
 
-		$main_holder = $main.children[1];
-		$main_wrapper = $main_holder.children[0];
+		// head.appendChild(style);
+
+		// style.type = 'text/css';
+		// if (style.styleSheet){
+		//   // This is required for IE8 and below.
+		//   style.styleSheet.cssText = css;
+		// } else {
+		//   style.appendChild(document.createTextNode(css));
+		// }			
+		}
 
 		// console.log(chart_data);
 
@@ -98,21 +123,50 @@ function ChartBuilder(settings) {
 		* Create SVG and base elements
 		*/
 	function createLayouts() {
+		$app__main = self.createElementNS(null, 'div', {
+									id: id_prefix + '__main'
+								});
+		$app__scroll = self.createElementNS(null, 'div', {
+									id: id_prefix + '__scroll'
+								});
+		$app__switchers = self.createElementNS(null, 'div', {
+									id: id_prefix + '__switchers'
+								});
+		if( title ) {
+			$app__main_title = self.createElementNS(null, 'div', {
+										id: id_prefix + '__main-title'
+									});			
+			$app__main_title.innerHTML = title;
+		}
+		$app__main_holder = self.createElementNS(null, 'div', {
+									id: id_prefix + '__main-holder'
+								});
+		$app__main_wrapper = self.createElementNS(null, 'div', {
+									id: id_prefix + '__main-wrapper'
+								});
 		$svg_main = self.createElementNS(xmlns, 'svg', {
 								width: (1 / (visible.to - visible.from)) * 100 +'%',
 								height: '100%',
-								id: 'app__main-svg'
+								id: id_prefix + '__main-svg'
 							});
 		$svg_scroll = self.createElementNS(xmlns, 'svg', {
 									width: '100%',
 									height: '100%',
-									id: 'app__scroll-svg'
-								},
-								{
-									background: '#fff'
+									id: id_prefix + '__scroll-svg'
 								});
-		$main_wrapper.appendChild($svg_main);
-		$scroll.appendChild($svg_scroll);
+		$container.appendChild($app__main);
+		$container.appendChild($app__scroll);
+		$container.appendChild($app__switchers);
+
+		if( title ) {
+			$app__main.appendChild($app__main_title);
+		}
+
+		$app__main.appendChild($app__main_holder);
+		$app__main_holder.appendChild($app__main_wrapper);
+
+		$app__main_wrapper.appendChild($svg_main);
+		$app__scroll.appendChild($svg_scroll);
 	}
 
 	function prepareData() {
@@ -154,7 +208,7 @@ function ChartBuilder(settings) {
 	}
 
 	function calcVariables() {
-		let main_holder_params = $main_holder.getBoundingClientRect();
+		let main_holder_params = $app__main_holder.getBoundingClientRect();
 
 		svg_main__computed = getComputedStyle($svg_main);
 		px_per_day = parseInt(svg_main__computed.width) / timestamps.length;
@@ -211,9 +265,9 @@ function ChartBuilder(settings) {
 	}
 
 	function drawBreakpoints() {
-		let main_holder_params = $main_holder.getBoundingClientRect(),
+		let main_holder_params = $app__main_holder.getBoundingClientRect(),
 				$svg_breakpoints = self.createElementNS(xmlns, 'svg', {
-														id: 'app__breakpoints',
+														id: id_prefix + '__breakpoints',
 														width: '60px',
 														height: main_holder_params.height + 'px'
 													}),
@@ -237,11 +291,11 @@ function ChartBuilder(settings) {
 			$svg_breakpoints.appendChild($group_breakpoints);
 		}
 
-		$main_holder.appendChild($svg_breakpoints);
+		$app__main_holder.appendChild($svg_breakpoints);
 	}
 
 	function drawDates() {
-		let $app__main_svg = document.getElementById('app__main-svg'),
+		let $app__main_svg = document.getElementById(id_prefix + '__main-svg'),
 				date_diff = timestamps[timestamps.length - 1] - timestamps[0],
 				date_diff_in_days = date_diff/(1000*60*60*24),
 				draw_period = 7,
@@ -320,7 +374,7 @@ function ChartBuilder(settings) {
 
 	function drawScrollCharts() {
 		// console.log(charts);
-		let $app__scroll_svg = document.getElementById('app__scroll-svg'),
+		let $app__scroll_svg = document.getElementById(id_prefix + '__scroll-svg'),
 				$group_charts = self.createElementNS(xmlns, 'g'),
 				app__scroll_svg_params = $app__scroll_svg.getBoundingClientRect(),
 				start_height = app__scroll_svg_params.height,
@@ -357,15 +411,15 @@ function ChartBuilder(settings) {
 	}
 
 	function drawChartsSwitchers() {
-		let $app__switchers = document.getElementById('app__switchers');
+		let $app__switchers = document.getElementById(id_prefix + '__switchers');
 
 		charts.forEach(function(chart) {
-			console.log(chart);
+			// console.log(chart);
 			let $chart_switcher = self.createElementNS(null, 'div', {
-													class: 'app-switcher checked'
+													class: id_prefix + '-switcher checked'
 												}),
 					$chart_switcher__chbox = self.createElementNS(null, 'span', {
-													class: 'app-switcher__chbox'
+													class: id_prefix + '-switcher__chbox'
 												},
 												{
 													'background-color': chart.color,
@@ -384,7 +438,7 @@ function ChartBuilder(settings) {
 															'stroke-linecap': 'square'
 														}),
 					$chart_switcher__name = self.createElementNS(null, 'span', {
-													class: 'app-switcher__name'
+													class: id_prefix + '-switcher__name'
 												});
 
 			$chart_switcher__name.innerHTML = chart.name;

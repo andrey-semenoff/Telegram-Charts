@@ -15,7 +15,10 @@ xhr.onreadystatechange = function() {
 
 		var Chart = new ChartBuilder({
 			container: $app,
-			chart_data: chart_data
+			id_prefix: 'app',
+			chart_data: chart_data,
+			externalCss: false,
+			title: 'Followers'
 		});
 
 
