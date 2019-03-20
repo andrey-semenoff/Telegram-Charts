@@ -22,10 +22,10 @@ function ChartBuilder(settings) {
 			$app__main_title = null,
 			$app__main_holder = null,
 			$app__main_wrapper = null,
-			$svg_main = null,
+			$app__main_svg = null,
 			svg_main__computed = {},
 			$app__scroll = null,
-			$svg_scroll = null,
+			$app__scroll_svg = null,
 			$scrollbar__caret = null,
 			$scrollbar__backdrop_left = null,
 			$scrollbar__backdrop_right = null,
@@ -164,12 +164,12 @@ function ChartBuilder(settings) {
 		$app__main_wrapper = self.createElementNS(null, 'div', {
 									id: namespace + '__main-wrapper'
 								});
-		$svg_main = self.createElementNS(xmlns, 'svg', {
+		$app__main_svg = self.createElementNS(xmlns, 'svg', {
 								width: (1 / (visible.to - visible.from)) * 100 +'%',
 								height: '100%',
 								id: namespace + '__main-svg'
 							});
-		$svg_scroll = self.createElementNS(xmlns, 'svg', {
+		$app__scroll_svg = self.createElementNS(xmlns, 'svg', {
 									width: '100%',
 									height: '100%',
 									id: namespace + '__scroll-svg'
@@ -186,8 +186,8 @@ function ChartBuilder(settings) {
 		$app__main.appendChild($app__main_holder);
 		$app__main_holder.appendChild($app__main_wrapper);
 
-		$app__main_wrapper.appendChild($svg_main);
-		$app__scroll.appendChild($svg_scroll);
+		$app__main_wrapper.appendChild($app__main_svg);
+		$app__scroll.appendChild($app__scroll_svg);
 	}
 
 	function prepareData() {
@@ -231,7 +231,7 @@ function ChartBuilder(settings) {
 	function calcVariables() {
 		let main_holder_params = $app__main_holder.getBoundingClientRect();
 
-		svg_main__computed = getComputedStyle($svg_main);
+		svg_main__computed = getComputedStyle($app__main_svg);
 		px_per_day = parseInt(svg_main__computed.width) / timestamps.length;
 
 		charts.forEach(function(chart) {
@@ -282,7 +282,7 @@ function ChartBuilder(settings) {
 			$group_lines.appendChild($line);
 		}
 
-		$svg_main.appendChild($group_lines);
+		$app__main_svg.appendChild($group_lines);
 	}
 
 	function drawBreakpoints() {
@@ -355,7 +355,7 @@ function ChartBuilder(settings) {
 			$app__main_svg.setAttribute('width', timestamps.length * min_width + 'px');
 		}
 
-		$svg_main.appendChild($group_values);
+		$app__main_svg.appendChild($group_values);
 	}
 
 	function drawCharts() {
@@ -390,7 +390,7 @@ function ChartBuilder(settings) {
 			$group_charts.appendChild($chart_line);
 		});
 
-		$svg_main.appendChild($group_charts);	
+		$app__main_svg.appendChild($group_charts);	
 	}
 
 	function drawScrollCharts() {
@@ -530,6 +530,7 @@ function ChartBuilder(settings) {
 				move__diff = null,
 				scrollbar__caret_left = null,
 				action = null;
+
 		document.addEventListener('mousedown', function(e) {
 			if( e.which === 1 && e.target === $scrollbar__caret) {
 				action = 'move';
@@ -567,7 +568,6 @@ function ChartBuilder(settings) {
 	}
 
 	function setScrollbar(left, width) {
-		console.log('left ', left);
 		if( left < 0 ) {
 			left = 0;
 		}
@@ -587,6 +587,14 @@ function ChartBuilder(settings) {
 
 		self.css($scrollbar__backdrop_right, {
 			width: $app__scroll.offsetWidth - width - left + 'px'
+		});
+
+		scrollMainSVG(left/$app__scroll.offsetWidth);
+	}
+
+	function scrollMainSVG(left) {
+		self.css($app__main_svg, {
+			transform: 'translateX(' + (- left * 100) + '%);'
 		});
 	}
 
