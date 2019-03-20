@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
 					namespace: 'app',
 					chart_data: JSON.parse(chart_data)[$select.value],
 					externalCss: false,
-					title: 'Followers'
+					title: 'Followers',
+					caret_min_width: 100
 				});
 			}
 		} else {
@@ -41,7 +42,8 @@ document.addEventListener('DOMContentLoaded', function() {
 			namespace: 'app',
 			chart_data: JSON.parse(chart_data)[e.target.value],
 			externalCss: false,
-			title: 'Followers'
+			title: 'Followers',
+			caret_min_width: 100
 		});
 	}, false);
 

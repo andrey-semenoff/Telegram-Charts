@@ -17,6 +17,7 @@ function ChartBuilder(settings) {
 			namespace = 'app',
 			externalCss = false,
 			title = null,
+			caret_min_width = null,
 
 			$app__main = null,
 			$app__main_title = null,
@@ -27,6 +28,8 @@ function ChartBuilder(settings) {
 			$app__scroll = null,
 			$app__scroll_svg = null,
 			$scrollbar__caret = null,
+			$scrollbar__caret_hand_left = null,
+			$scrollbar__caret_hand_right = null,
 			$scrollbar__backdrop_left = null,
 			$scrollbar__backdrop_right = null,
 			$app__switchers = null,
@@ -52,11 +55,12 @@ function ChartBuilder(settings) {
 		* Constructor of Chart
 		*/
 	function constructor(settings) {
-		$container	= settings.container;
-		chart_data	= settings.chart_data;
-		namespace		= settings.namespace;
-		externalCss	= settings.externalCss;
-		title 			= settings.title;
+		$container			= settings.container;
+		chart_data			= settings.chart_data;
+		namespace				= settings.namespace;
+		externalCss			= settings.externalCss;
+		title 					= settings.title;
+		caret_min_width = settings.caret_min_width || 50;
 
 		if( !$container || !chart_data ) {
 			console.error('Chart builder constructor error! Mandatory settings wasn\'t set!', settings);
@@ -435,6 +439,12 @@ function ChartBuilder(settings) {
 		$scrollbar__caret = self.createElementNS(null, 'div', {
 															id: namespace + '__scrollbar-caret'
 														}),
+		$scrollbar__caret_hand_left = self.createElementNS(null, 'div', {
+															class: namespace + '__caret-hand ' + namespace + '__caret-hand_left'
+														}),
+		$scrollbar__caret_hand_right = self.createElementNS(null, 'div', {
+															class: namespace + '__caret-hand ' + namespace + '__caret-hand_right'
+														}),
 		$scrollbar__backdrop_left = self.createElementNS(null, 'div', {
 															class: namespace + '__scrollbar-backdrop ' + namespace + '__scrollbar-backdrop_left'
 														},
@@ -453,6 +463,8 @@ function ChartBuilder(settings) {
 		$app__scroll.appendChild($scrollbar__backdrop_left);
 		$app__scroll.appendChild($scrollbar__backdrop_right);
 		$app__scroll.appendChild($scrollbar__caret);
+		$scrollbar__caret.appendChild($scrollbar__caret_hand_left);
+		$scrollbar__caret.appendChild($scrollbar__caret_hand_right);
 	}
 
 	function drawChartsSwitchers() {
@@ -529,35 +541,93 @@ function ChartBuilder(settings) {
 				move__finish = null,
 				move__diff = null,
 				scrollbar__caret_left = null,
+				scrollbar__caret_width = null,
 				action = null;
 
 		document.addEventListener('mousedown', function(e) {
 			if( e.which === 1 && e.target === $scrollbar__caret) {
 				action = 'move';
-			} else {
-				action = null;
+			} else if( e.which === 1 && e.target === $scrollbar__caret_hand_left) {
+				action = 'resize_left';
+			} else if( e.which === 1 && e.target === $scrollbar__caret_hand_right) {
+				action = 'resize_right';
 			}
 		});
 		
 		document.addEventListener('mouseup', function(e) {
 			action = null;
+			move__start = null;
 		});
 
 		document.addEventListener('mousemove', function(e) {
-			// $scrollbar__caret
-			// console.log(e.target === $scrollbar__caret);
 			if( action === 'move' ) {
-				// console.log(e);
 				if( move__start === null ) {
 					scrollbar__caret_left = parseInt($scrollbar__caret.style.left);
+					scrollbar__caret_width = parseInt($scrollbar__caret.style.width);
 					move__start = e.x;
 				} else {
 					move__finish = e.x;
 					move__diff = move__finish - move__start;
-					setScrollbar(scrollbar__caret_left + move__diff, parseInt($scrollbar__caret.style.width));
+
+					let new_left = scrollbar__caret_left + move__diff;
+
+					if( new_left < 0 ) {
+						new_left = 0;
+					}
+
+					if( new_left + scrollbar__caret_width >= $app__scroll.offsetWidth ) {
+						new_left = $app__scroll.offsetWidth - scrollbar__caret_width;
+					}
+
+					setScrollbar(new_left, scrollbar__caret_width);
 				}
-			} else {
-				move__start = null;
+
+			} else if( action === 'resize_left' ) {
+				// console.log(action);
+				if( move__start === null ) {
+					scrollbar__caret_left = parseInt($scrollbar__caret.style.left);
+					scrollbar__caret_width = parseInt($scrollbar__caret.style.width);
+					move__start = e.x;
+				} else {
+					move__finish = e.x;
+					move__diff = move__finish - move__start;
+					let new_left = scrollbar__caret_left + move__diff,
+							new_width = scrollbar__caret_width - move__diff;
+
+					if( new_left < 0 ) {
+						new_left = 0;
+						new_width = null;
+					}
+
+					if( new_width && new_width <= caret_min_width ) {
+						new_left = parseInt($scrollbar__caret.style.left);
+						new_width = caret_min_width;
+					}
+
+					setScrollbar(new_left, new_width);
+				}
+
+			} else if( action === 'resize_right' ) {
+				// console.log(action);
+				if( move__start === null ) {
+					scrollbar__caret_left = parseInt($scrollbar__caret.style.left);
+					scrollbar__caret_width = parseInt($scrollbar__caret.style.width);
+					move__start = e.x;
+				} else {
+					move__finish = e.x;
+					move__diff = move__finish - move__start;
+					let new_width = scrollbar__caret_width + move__diff;
+
+					if( scrollbar__caret_left + new_width > $app__scroll.offsetWidth ) {
+						new_width = $app__scroll.offsetWidth - scrollbar__caret_left;
+					}
+
+					if( new_width && new_width <= caret_min_width ) {
+						new_width = caret_min_width;
+					}
+
+					setScrollbar(scrollbar__caret_left, new_width);
+				}
 			}
 		}, true);
 
@@ -568,12 +638,8 @@ function ChartBuilder(settings) {
 	}
 
 	function setScrollbar(left, width) {
-		if( left < 0 ) {
-			left = 0;
-		}
-
-		if( left + width >= $app__scroll.offsetWidth ) {
-			left = $app__scroll.offsetWidth - width;
+		if( width === null ) {
+			return false;
 		}
 
 		self.css($scrollbar__caret, {
