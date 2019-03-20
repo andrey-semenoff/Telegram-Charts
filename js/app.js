@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			if( $select.value !== '' ) {
 				Chart = new ChartBuilder({
 					container: $app,
-					id_prefix: 'app',
+					namespace: 'app',
 					chart_data: JSON.parse(chart_data)[$select.value],
 					externalCss: false,
 					title: 'Followers'
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		// console.log(e.target.value);
 		Chart = new ChartBuilder({
 			container: $app,
-			id_prefix: 'app',
+			namespace: 'app',
 			chart_data: JSON.parse(chart_data)[e.target.value],
 			externalCss: false,
 			title: 'Followers'

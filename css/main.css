@@ -46,7 +46,28 @@
 }
 
 #app__scroll {
+	position: relative;
 	height: 15%;
+}
+
+#app__scrollbar-caret {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	border: 2px solid rgba(0,0,0, .5);
+	border-left-width: 10px;
+	border-right-width: 10px;
+	cursor: pointer;
+	cursor: move;
+	cursor: w-resize;
+	cursor: col-resize;
+}
+
+.app__scrollbar-backdrop {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	background-color: rgba(0,0,0, .2);
 }
 
 #app__switchers {

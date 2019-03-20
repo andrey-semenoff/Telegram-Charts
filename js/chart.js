@@ -6,7 +6,7 @@
 	* Settings:
 	* container   (string)  - (mandatory) ID of DOM element where to build charts
 	* chart_data  (array)   - (mandatory) JSON object with data about charts
-	* id_prefix   (string)  - (mandatory) namespace prefix for IDs of generated DOM elements
+	* namespace   (string)  - (mandatory) namespace prefix for IDs of generated DOM elements
 	* externalCss (boolean) - (optional, false by default) use external css file for styling elements, or generate styles via JS
 	* title 			(string) -  (optional) showing title of charts
 	*/
@@ -14,7 +14,7 @@ function ChartBuilder(settings) {
 	let self = this,
 			$container = null,
 			chart_data = null,
-			id_prefix = 'app',
+			namespace = 'app',
 			externalCss = false,
 			title = null,
 
@@ -26,6 +26,9 @@ function ChartBuilder(settings) {
 			svg_main__computed = {},
 			$app__scroll = null,
 			$svg_scroll = null,
+			$scrollbar__caret = null,
+			$scrollbar__backdrop_left = null,
+			$scrollbar__backdrop_right = null,
 			$app__switchers = null,
 			xmlns = "http://www.w3.org/2000/svg",
 			$svg = null,
@@ -51,7 +54,7 @@ function ChartBuilder(settings) {
 	function constructor(settings) {
 		$container	= settings.container;
 		chart_data	= settings.chart_data;
-		id_prefix		= settings.id_prefix;
+		namespace		= settings.namespace;
 		externalCss	= settings.externalCss;
 		title 			= settings.title;
 
@@ -86,6 +89,7 @@ function ChartBuilder(settings) {
 		drawDates();
 		drawCharts();
 		drawScrollCharts();
+		drawScrollbar();
 		drawChartsSwitchers();
 		createEvents();
 
@@ -106,52 +110,69 @@ function ChartBuilder(settings) {
 			$el.setAttribute(prop, attributes[prop]);
 		}
 		
-		if( styles && styles instanceof Object && typeof styles === "object" ) {
-			let cssText = '';
-			for( let prop in styles ) {
-				cssText += prop + ":" + styles[prop] + ";";
-			}
-			$el.style.cssText = cssText;
+		if( styles ) {
+			self.css($el, styles);			
 		}
 
 		return $el;
 	}
 
+	this.css = function($el, styles) {
+		if( typeof $el !== "object" || !($el instanceof Element) ) {
+			console.warn($el, 'should be instance of Element!');
+			 return false;
+		}
+
+		if( !(styles instanceof Object) || typeof styles !== "object" ) {
+			console.warn('Styles should be object', styles);
+			return false;
+		}
+
+		let cssText = '';
+
+		for( let prop in styles ) {
+			if( styles[prop] !== null ) {
+				cssText += prop + ":" + styles[prop] + ";";				
+			}
+		}
+
+		$el.style.cssText += cssText;
+	}
 
 	/**
 		* Create SVG and base elements
 		*/
 	function createLayouts() {
 		$app__main = self.createElementNS(null, 'div', {
-									id: id_prefix + '__main'
+									id: namespace + '__main'
 								});
 		$app__scroll = self.createElementNS(null, 'div', {
-									id: id_prefix + '__scroll'
+									id: namespace + '__scroll'
 								});
 		$app__switchers = self.createElementNS(null, 'div', {
-									id: id_prefix + '__switchers'
+									id: namespace + '__switchers'
 								});
 		if( title ) {
 			$app__main_title = self.createElementNS(null, 'div', {
-										id: id_prefix + '__main-title'
+										id: namespace + '__main-title'
 									});			
 			$app__main_title.innerHTML = title;
 		}
 		$app__main_holder = self.createElementNS(null, 'div', {
-									id: id_prefix + '__main-holder'
+									id: namespace + '__main-holder'
 								});
 		$app__main_wrapper = self.createElementNS(null, 'div', {
-									id: id_prefix + '__main-wrapper'
+									id: namespace + '__main-wrapper'
 								});
 		$svg_main = self.createElementNS(xmlns, 'svg', {
 								width: (1 / (visible.to - visible.from)) * 100 +'%',
 								height: '100%',
-								id: id_prefix + '__main-svg'
+								id: namespace + '__main-svg'
 							});
 		$svg_scroll = self.createElementNS(xmlns, 'svg', {
 									width: '100%',
 									height: '100%',
-									id: id_prefix + '__scroll-svg'
+									id: namespace + '__scroll-svg'
 								});
 		$container.innerHTML = "";
 		$container.appendChild($app__main);
@@ -267,7 +288,7 @@ function ChartBuilder(settings) {
 	function drawBreakpoints() {
 		let main_holder_params = $app__main_holder.getBoundingClientRect(),
 				$svg_breakpoints = self.createElementNS(xmlns, 'svg', {
-														id: id_prefix + '__breakpoints',
+														id: namespace + '__breakpoints',
 														width: '60px',
 														height: main_holder_params.height + 'px'
 													}),
@@ -295,7 +316,7 @@ function ChartBuilder(settings) {
 	}
 
 	function drawDates() {
-		let $app__main_svg = document.getElementById(id_prefix + '__main-svg'),
+		let $app__main_svg = document.getElementById(namespace + '__main-svg'),
 				date_diff = timestamps[timestamps.length - 1] - timestamps[0],
 				date_diff_in_days = date_diff/(1000*60*60*24),
 				draw_period = 7,
@@ -374,7 +395,7 @@ function ChartBuilder(settings) {
 
 	function drawScrollCharts() {
 		// console.log(charts);
-		let $app__scroll_svg = document.getElementById(id_prefix + '__scroll-svg'),
+		let $app__scroll_svg = document.getElementById(namespace + '__scroll-svg'),
 				$group_charts = self.createElementNS(xmlns, 'g'),
 				app__scroll_svg_params = $app__scroll_svg.getBoundingClientRect(),
 				start_height = app__scroll_svg_params.height,
@@ -407,19 +428,43 @@ function ChartBuilder(settings) {
 			$group_charts.appendChild($chart_line);
 		});
 
-		$app__scroll_svg.appendChild($group_charts);	
+		$app__scroll_svg.appendChild($group_charts);
+	}
+
+	function drawScrollbar() {
+		$scrollbar__caret = self.createElementNS(null, 'div', {
+															id: namespace + '__scrollbar-caret'
+														}),
+		$scrollbar__backdrop_left = self.createElementNS(null, 'div', {
+															class: namespace + '__scrollbar-backdrop ' + namespace + '__scrollbar-backdrop_left'
+														},
+														{
+															left: 0
+														}),
+		$scrollbar__backdrop_right = self.createElementNS(null, 'div', {
+															class: namespace + '__scrollbar-backdrop ' + namespace + '__scrollbar-backdrop_right'
+														},
+														{
+															right: 0
+														});
+
+		let app__scroll_width = $app__scroll.offsetWidth;
+		setScrollbar(app__scroll_width * 0.75, app__scroll_width * 0.25);
+		$app__scroll.appendChild($scrollbar__backdrop_left);
+		$app__scroll.appendChild($scrollbar__backdrop_right);
+		$app__scroll.appendChild($scrollbar__caret);
 	}
 
 	function drawChartsSwitchers() {
-		let $app__switchers = document.getElementById(id_prefix + '__switchers');
+		let $app__switchers = document.getElementById(namespace + '__switchers');
 
 		charts.forEach(function(chart) {
 			// console.log(chart);
 			let $chart_switcher = self.createElementNS(null, 'div', {
-													class: id_prefix + '-switcher checked'
+													class: namespace + '-switcher checked'
 												}),
 					$chart_switcher__chbox = self.createElementNS(null, 'span', {
-													class: id_prefix + '-switcher__chbox'
+													class: namespace + '-switcher__chbox'
 												},
 												{
 													'background-color': chart.color,
@@ -438,7 +483,7 @@ function ChartBuilder(settings) {
 															'stroke-linecap': 'square'
 														}),
 					$chart_switcher__name = self.createElementNS(null, 'span', {
-													class: id_prefix + '-switcher__name'
+													class: namespace + '-switcher__name'
 												});
 
 			$chart_switcher__name.innerHTML = chart.name;
@@ -452,8 +497,8 @@ function ChartBuilder(settings) {
 	}
 
 	function createEvents() {
+		// Switch visibility of charts
 		let $chart_switchers = document.querySelectorAll('.app-switcher');
-
 		$chart_switchers.forEach(function($switcher) {
 			$switcher.addEventListener('click', function(e) {
 				let $checked = document.querySelectorAll('.app-switcher.checked');
@@ -479,11 +524,70 @@ function ChartBuilder(settings) {
 			});
 		});	
 
+		// Scrollbar caret move
+		let move__start = null,
+				move__finish = null,
+				move__diff = null,
+				scrollbar__caret_left = null,
+				action = null;
+		document.addEventListener('mousedown', function(e) {
+			if( e.which === 1 && e.target === $scrollbar__caret) {
+				action = 'move';
+			} else {
+				action = null;
+			}
+		});
+		
+		document.addEventListener('mouseup', function(e) {
+			action = null;
+		});
+
+		document.addEventListener('mousemove', function(e) {
+			// $scrollbar__caret
+			// console.log(e.target === $scrollbar__caret);
+			if( action === 'move' ) {
+				// console.log(e);
+				if( move__start === null ) {
+					scrollbar__caret_left = parseInt($scrollbar__caret.style.left);
+					move__start = e.x;
+				} else {
+					move__finish = e.x;
+					move__diff = move__finish - move__start;
+					setScrollbar(scrollbar__caret_left + move__diff, parseInt($scrollbar__caret.style.width));
+				}
+			} else {
+				move__start = null;
+			}
+		}, true);
 
 	}
 
 	function onChartSelectChange($checked) {	
 		console.log($checked);
+	}
+
+	function setScrollbar(left, width) {
+		console.log('left ', left);
+		if( left < 0 ) {
+			left = 0;
+		}
+
+		if( left + width >= $app__scroll.offsetWidth ) {
+			left = $app__scroll.offsetWidth - width;
+		}
+
+		self.css($scrollbar__caret, {
+			left: left + 'px',
+			width: width + 'px'
+		});
+
+		self.css($scrollbar__backdrop_left, {
+			width: left + 'px'
+		});
+
+		self.css($scrollbar__backdrop_right, {
+			width: $app__scroll.offsetWidth - width - left + 'px'
+		});
 	}
 
 	constructor(settings);
